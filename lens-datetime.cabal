@@ -1,0 +1,39 @@
+name: lens-datetime
+version: 0.1
+license: BSD3
+license-file: LICENSE
+author: Mihaly Barasz <mihaly@barasz.com>
+maintainer: Mihaly Barasz <mihaly@barasz.com>
+build-type: Simple
+cabal-version: >= 1.6
+category: Data, Lenses
+stability: provisional
+homepage: http://github.com/klao/lens-datetime
+bug-reports: http://github.com/klao/lens-datetime/issues
+synopsis: Lenses for Data.Time.*
+
+description:
+  The @lens-datetime@ library provides a unified lens based accessors
+  to the various types in @Data.Time.Clock@, @Data.Time.Calendar@ and
+  @Data.Time.LocalTime@.
+  .
+  TODO(klao): intro
+
+extra-source-files:
+  README.md
+  .gitignore
+
+source-repository head
+  type: git
+  location: https://github.com/klao/lens-datetime.git
+
+library
+  ghc-options: -Wall
+
+  build-depends:
+      base >= 4.6 && < 5
+    , time == 1.*
+    , lens == 3.*
+
+  exposed-modules:
+    Data.Time.Lens
