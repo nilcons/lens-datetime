@@ -94,6 +94,30 @@ around daylight saving time and leap seconds. If your code has to
 be correct wrt. DST, do all the computations in 'UTCTime' and convert
 to local time only for output. If you need to be correct wrt. leap
 seconds, then... Well, then I don't know. :)
+
+And while this doesn't strictly belong to this package, here's a
+complete example of working with daylight saving time:
+
+>dstExample :: IO ()
+>dstExample = do
+>  let baseT = UTCTime (fromGregorian 2013 10 26) 0
+>
+>      printInLocal :: UTCTime -> IO ()
+>      printInLocal t = do
+>        tz <- getTimeZone t
+>        print (tz, t ^. utcInTZ tz)
+>
+>  printInLocal baseT
+>  printInLocal $ baseT & flexDT %~ ((day +~ 1) . (hour +~ 0) . (minute +~ 5))
+>  printInLocal $ baseT & flexDT %~ ((day +~ 1) . (hour +~ 1) . (minute +~ 5))
+>  printInLocal $ baseT & flexDT %~ ((day +~ 1) . (hour +~ 2) . (minute +~ 5))
+
+>>> dstExample
+(CEST,2013-10-26 02:00:00)
+(CEST,2013-10-27 02:05:00)
+(CET,2013-10-27 02:05:00)
+(CET,2013-10-27 03:05:00)
+
 -}
 
 {-# LANGUAGE Rank2Types #-}
