@@ -89,7 +89,7 @@
 --
 -- Note that even with 'flexDT' we completely ignore all the issues
 -- around daylight saving time and leap seconds. If your code has to
--- be correct wrt. DST do all the computations in UTCTime and convert
+-- be correct wrt. DST, do all the computations in 'UTCTime' and convert
 -- to local time only for output. If you need to be correct wrt. leap
 -- seconds, then... Well, then I don't know. :)
 
@@ -154,19 +154,21 @@ instance Field3 FlexDate FlexDate Int Int where
   _3 f (FlexDate y m d) = indexed f (2 :: Int) d <&> \d' -> FlexDate y m d'
   {-# INLINE _3 #-}
 
-
+-- | Type class to provide correct roll-over behavior for date-time lenses.
+--
+-- See examples in the general overview part.
 class FlexibleDateTime a where
-  flexDT :: Iso' a FlexTime
+  flexDT :: Lens' a FlexTime
 
 instance FlexibleDateTime LocalTime where
   {-# INLINE flexDT #-}
-  flexDT = iso convert rollOver
+  flexDT = lens convert rollOver
     where
       convert (LocalTime d t) = FlexTime (d ^. gregorianUnflex) t
       {-# INLINE convert #-}
 
       {-# INLINABLE rollOver #-}
-      rollOver (FlexTime (FlexDate y m d) tod) = result
+      rollOver _ (FlexTime (FlexDate y m d) tod) = result
         where
           (secs0, p0) = properFraction $ tod ^. from diffTOD
           (secs, p) = if p0 < 0 then (secs0 - 1, p0 + 1) else (secs0, p0)
@@ -218,10 +220,16 @@ instance Dateable FlexTime where
   dateFlex f (FlexTime d t) = flip FlexTime t <$> f d
   {-# INLINE dateFlex #-}
 
+-- | View 'Day' as an 'Integer' day number in the Julian calendar.
+--
+-- See the description at the definition of 'Day'.
 julianDay :: Iso' Day Integer
 julianDay = iso toModifiedJulianDay ModifiedJulianDay
 {-# INLINE julianDay #-}
 
+-- | View 'Day' as a triple of (year,month,day) in Gregorian calendar.
+--
+-- See the description at the definition of 'fromGregorian' / 'toGregorian'.
 gregorianDate :: Iso' Day (Integer,Int,Int)
 gregorianDate = iso toGregorian (\(y,m,d) -> fromGregorian y m d)
 {-# INLINE gregorianDate #-}
@@ -327,10 +335,16 @@ second = time.second'
 --------------------------------------------------------------------------------
 -- Misc
 
+-- | Trivial isomorphism between 'UTCTime' and 'LocalTime'.
+--
+-- We view 'LocalTime' values as being in the UTC time zone. This is
+-- 'utcInTZ' applied to 'utc'.
 utcAsLocal :: Iso' UTCTime LocalTime
 utcAsLocal = utcInTZ utc
 {-# INLINE utcAsLocal #-}
 
+-- | Isomorphism between 'UTCTime' and 'LocalTime' for the given
+-- 'TimeZone'.
 utcInTZ :: TimeZone -> Iso' UTCTime LocalTime
 utcInTZ tz = iso (utcToLocalTime tz) (localTimeToUTC tz)
 {-# INLINE utcInTZ #-}
