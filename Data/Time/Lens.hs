@@ -8,6 +8,9 @@ module Data.Time.Lens
        , year, month, day
        , Timeable(..)
        , hour, minute, second
+       , FlexDate(..)
+       , FlexTime(..)
+       , FlexibleDateTime(..)
        , utcInTZ
        , utcAsLocal
        ) where
@@ -52,12 +55,12 @@ instance Field3 FlexDate FlexDate Int Int where
   {-# INLINE _3 #-}
 
 
-class FlexibleTime a where
-  flexible :: Iso' a FlexTime
+class FlexibleDateTime a where
+  flexDT :: Iso' a FlexTime
 
-instance FlexibleTime LocalTime where
-  {-# INLINE flexible #-}
-  flexible = iso convert rollOver
+instance FlexibleDateTime LocalTime where
+  {-# INLINE flexDT #-}
+  flexDT = iso convert rollOver
     where
       convert (LocalTime d t) = FlexTime (d ^. gregorianUnflex) t
       {-# INLINE convert #-}
@@ -76,11 +79,9 @@ instance FlexibleTime LocalTime where
           date' = addDays (fromIntegral $ d + dt - 1) date0
           result = LocalTime date' tod'
 
-
-
-instance FlexibleTime UTCTime where
-  flexible = utcAsLocal.flexible
-  {-# INLINE flexible #-}
+instance FlexibleDateTime UTCTime where
+  flexDT = utcAsLocal.flexDT
+  {-# INLINE flexDT #-}
 
 --------------------------------------------------------------------------------
 -- Date parts
