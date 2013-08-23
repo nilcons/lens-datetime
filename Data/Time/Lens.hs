@@ -1,98 +1,100 @@
---------------------------------------------------------------------------------
--- |
--- Module      : Data.Time.Lens
--- Copyright   : (C) 2013 Mihaly Barasz
--- License     : BSD3, see LICENSE
--- Maintainer  : Mihaly Barasz <mihaly@barasz.com>
--- Stability   : experimental
--- Portability : non-portable
---
--- Usage:
---
--- Basic interface consists of the following six lenses: 'year',
--- 'month', 'day', 'hour', 'minute' and 'second' with which you can
--- corresponding \"fields\" of 'LocalTime' and 'UTCTime' in a unified
--- way. Also 'date' and 'time' if you want to access the 'Day' and
--- 'TimeOfDay' parts as a whole.
---
---
--- Let's assume the following definitions:
---
--- >import Data.Time
--- >import Data.Time.Lens
--- >
--- >aDay :: Day
--- >aDay = fromGregorian 2013 08 22
--- >
--- >aLocal :: LocalTime
--- >aLocal = LocalTime aDay (TimeOfDay 13 45 28)
--- >
--- >aUTC :: UTCTime
--- >aUTC = UTCTime aDay 7458.9
---
--- Then you can use the above lenses as follows:
---
--- >>> aLocal ^. year
--- 2013
--- >>> aUTC ^. month
--- 8
--- >>> aLocal & time .~ midnight
--- 2013-08-22 00:00:00
--- >>> aUTC & day .~ 1 & month .~ 1
--- 2013-01-01 02:04:18.9 UTC
--- >>> aLocal & hour +~ 1            -- But see the note below!
--- 2013-08-22 14:45:28
---
---
--- Note about invalid values and lens laws.
---
--- For 'LocalTime' and 'UTCTime' these lenses provide the most
--- straightforward implementation: via 'toGregorian'/'fromGregorian'
--- in the case of 'year', 'month' and 'day'; and directly to the
--- fields of 'TimeOfDay' in the case of 'hour', 'minute' and 'second'.
---
--- Which means, on one hand, that the date \"parts\" will be clipped
--- to valid values:
---
--- >>> aLocal & month +~ 12
--- 2013-12-22 13:45:28        -- instead of: 2014-08-22 13:45:28
--- >>> aUTC & day +~ 100
--- 2013-08-31 02:04:18.9 UTC  -- instead of: 2013-11-30 02:04:18.9 UTC
---
--- And on the other hand, that the time \"parts\" will not roll over
--- and produce invalid values:
---
--- >>> aLocal & minute +~ 120
--- 2013-08-22 13:165:28       -- instead of: 2013-08-22 15:45:28
---
--- Also, this means that the date lenses are not proper lenses: they
--- only satisfy the lens laws when used with valid values for the
--- given fields.
---
--- Basically, avoid setting/modifying the date-time values directly
--- via these lenses if you cannot be sure that the result is a valid
--- value. Instead use the 'FlexibleDateTime' mechanism and the
--- 'flexDT' isomorphism, which correctly rolls over:
---
--- >>> aLocal & flexDT.month +~ 12
--- 2014-08-22 13:45:28
--- >>> aUTC & flexDT.day +~ 100
--- 2013-11-30 02:04:18.9 UTC
--- >>> aLocal & flexDT.minute +~ 120
--- 2013-08-22 15:45:28
---
--- If you need to set multiple fields try to make only one round-trip
--- via flexDT:
---
--- >>> aLocal & flexDT %~ ((day +~ 7) . (hour +~ 2))
--- 2013-08-22 13:45:28
---
--- Note that even with 'flexDT' we completely ignore all the issues
--- around daylight saving time and leap seconds. If your code has to
--- be correct wrt. DST, do all the computations in 'UTCTime' and convert
--- to local time only for output. If you need to be correct wrt. leap
--- seconds, then... Well, then I don't know. :)
+{- |
+Module      : Data.Time.Lens
+Copyright   : (C) 2013 Mihaly Barasz
+License     : BSD3, see LICENSE
+Maintainer  : Mihaly Barasz <mihaly@barasz.com>
+Stability   : experimental
+Portability : non-portable
 
+/Usage:/
+
+Basic interface consists of the following six lenses: 'year',
+'month', 'day', 'hour', 'minute' and 'second' with which you can
+access the corresponding \"fields\" of 'LocalTime' and 'UTCTime' in
+a unified way. Also, use 'date' and 'time' if you want to access the
+'Day' and 'TimeOfDay' parts as a whole.
+
+
+Let's assume the following definitions:
+
+>import Control.Lens
+>import Data.Time
+>import Data.Time.Lens
+>
+>aDay :: Day
+>aDay = fromGregorian 2013 08 22
+>
+>aLocal :: LocalTime
+>aLocal = LocalTime aDay (TimeOfDay 13 45 28)
+>
+>aUTC :: UTCTime
+>aUTC = UTCTime aDay 7458.9
+
+Then you can use the above lenses as follows:
+
+>>> aLocal ^. year
+2013
+>>> aUTC ^. month
+8
+>>> aDay ^. day
+22
+>>> aLocal & time .~ midnight
+2013-08-22 00:00:00
+>>> aUTC & day .~ 1 & month .~ 1
+2013-01-01 02:04:18.9 UTC
+>>> aLocal & hour +~ 1            -- But see the note below!
+2013-08-22 14:45:28
+
+
+/A note about invalid values and lens laws./
+
+For 'LocalTime' and 'UTCTime' these lenses provide the most
+straightforward implementation: via 'toGregorian'/'fromGregorian'
+in the case of 'year', 'month' and 'day'; and directly to the
+fields of 'TimeOfDay' in the case of 'hour', 'minute' and 'second'.
+
+Which means, on one hand, that the date \"parts\" will be clipped
+to valid values:
+
+>>> aLocal & month +~ 12
+2013-12-22 13:45:28        -- instead of: 2014-08-22 13:45:28
+>>> aUTC & day +~ 100
+2013-08-31 02:04:18.9 UTC  -- instead of: 2013-11-30 02:04:18.9 UTC
+
+And on the other hand, that the time \"parts\" will not roll over
+and produce invalid values:
+
+>>> aLocal & minute +~ 120
+2013-08-22 13:165:28       -- instead of: 2013-08-22 15:45:28
+
+Also, this means that the date lenses are not proper lenses: they
+only satisfy the lens laws when used with valid values for the
+given fields.
+
+Basically, avoid setting/modifying the date-time values directly
+via these lenses if you cannot be sure that the result is a valid
+value. Instead use the 'FlexibleDateTime' mechanism and the
+'flexDT' isomorphism, which correctly rolls over:
+
+>>> aLocal & flexDT.month +~ 12
+2014-08-22 13:45:28
+>>> aUTC & flexDT.day +~ 100
+2013-11-30 02:04:18.9 UTC
+>>> aLocal & flexDT.minute +~ 120
+2013-08-22 15:45:28
+
+If you need to set multiple fields try to make only one round-trip
+via flexDT:
+
+>>> aLocal & flexDT %~ ((day +~ 7) . (hour +~ 2))
+2013-08-22 13:45:28
+
+Note that even with 'flexDT' we completely ignore all the issues
+around daylight saving time and leap seconds. If your code has to
+be correct wrt. DST, do all the computations in 'UTCTime' and convert
+to local time only for output. If you need to be correct wrt. leap
+seconds, then... Well, then I don't know. :)
+-}
 
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
