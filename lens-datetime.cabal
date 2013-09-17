@@ -15,7 +15,10 @@ synopsis: Lenses for Data.Time.* types
 description:
   The @lens-datetime@ library provides a unified lens based accessors
   to the various types in @Data.Time.Clock@, @Data.Time.Calendar@ and
-  @Data.Time.LocalTime@.
+  @Data.Time.LocalTime@. This library only tries to make some of the
+  common use-cases convenient, it doesn't aim for completeness. If you
+  want completeness and/or efficiency try the @thyme@ package instead
+  (<http://hackage.haskell.org/package/thyme>).
   .
   Demonstration of basic uses.
   .
