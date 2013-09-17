@@ -131,9 +131,12 @@ module Data.Time.Lens (
   , Timeable(..)
   , hour, minute, second
   -- * Support for the correct roll-over of fields
+  , FlexDateTime(..)
   , FlexDate(..)
   , FlexTime(..)
   , FlexibleDateTime(..)
+  , FlexibleDate(..)
+  , FlexibleTime(..)
   -- * Miscellaneous
   , utcInTZ
   , utcAsLocal
@@ -156,9 +159,11 @@ data FlexDate = FlexDate { flexYear :: Integer
                          , flexDay :: Int
                          } deriving (Show)
 
-data FlexTime = FlexTime { flexDate :: FlexDate
-                         , flexTOD :: TimeOfDay
-                         } deriving (Show)
+data FlexDateTime = FlexDateTime { flexDate :: FlexDate
+                                 , flexTOD :: TimeOfDay
+                                 } deriving (Show)
+
+newtype FlexTime = FlexTime TimeOfDay deriving (Show)
 
 flexDateTriple :: Iso' FlexDate (Integer,Int,Int)
 flexDateTriple = iso (\(FlexDate y m d) -> (y,m,d)) (\(y,m,d) -> FlexDate y m d)
@@ -184,17 +189,17 @@ instance Field3 FlexDate FlexDate Int Int where
 --
 -- See examples in the general overview part.
 class FlexibleDateTime a where
-  flexDT :: Lens' a FlexTime
+  flexDT :: Lens' a FlexDateTime
 
 instance FlexibleDateTime LocalTime where
   {-# INLINE flexDT #-}
   flexDT = lens convert rollOver
     where
-      convert (LocalTime d t) = FlexTime (d ^. gregorianUnflex) t
+      convert (LocalTime d t) = FlexDateTime (d ^. gregorianUnflex) t
       {-# INLINE convert #-}
 
       {-# INLINABLE rollOver #-}
-      rollOver _ (FlexTime (FlexDate y m d) tod) = result
+      rollOver _ (FlexDateTime (FlexDate y m d) tod) = result
         where
           (secs0, p0) = properFraction $ tod ^. from diffTOD
           (secs, p) = if p0 < 0 then (secs0 - 1, p0 + 1) else (secs0, p0)
@@ -211,6 +216,55 @@ instance FlexibleDateTime UTCTime where
   flexDT = utcAsLocal.flexDT
   {-# INLINE flexDT #-}
 
+-- | Type class to provide correct roll-over behavior for date lenses.
+--
+-- Used exactly as 'flexDT', but for values that have only \"date\"
+-- and no \"time\" part.
+class FlexibleDate a where
+  flexD :: Lens' a FlexDate
+
+instance FlexibleDate Day where
+  {-# INLINE flexD #-}
+  flexD = lens (view gregorianUnflex) rollOver
+    where
+      {-# INLINABLE rollOver #-}
+      rollOver _ (FlexDate y m d) = result
+        where
+          date0 = if m >= 1 && m <= 12
+                  then fromGregorian y m 1
+                  else fromGregorian y 1 1 & addGregorianMonthsRollOver (fromIntegral $ m-1)
+          result = addDays (fromIntegral $ d  - 1) date0
+
+-- | Type class to provide correct roll-over behavior for time lenses.
+--
+-- Used exactly as 'flexDT', but for values that have only \"time\"
+-- and no \"date\" part.
+--
+-- If the time rolls-over more than 24 hours the day carry is
+-- discarded. Ex.:
+--
+-- >>> let t = TimeOfDay 1 12 3
+-- >>> t
+-- 01:12:03
+-- >>> t & flexT.second +~ (-7200)
+-- 23:12:03
+--
+class FlexibleTime a where
+  flexT :: Lens' a FlexTime
+
+instance FlexibleTime TimeOfDay where
+  {-# INLINABLE flexT #-}
+  flexT = lens FlexTime rollOver
+    where
+      {-# INLINABLE rollOver #-}
+      rollOver _ (FlexTime tod) = tod'
+        where
+          secs0 :: Int
+          (secs0, p0) = properFraction $ tod ^. from diffTOD
+          (secs, p) = if p0 < 0 then (secs0 - 1, p0 + 1) else (secs0, p0)
+          secs1 = secs `mod` (24*60*60)
+          tod' = (fromIntegral secs1 + p) ^. diffTOD
+
 --------------------------------------------------------------------------------
 -- Date parts
 
@@ -219,12 +273,12 @@ instance FlexibleDateTime UTCTime where
 -- You can implement either of the two methods.
 class Dateable a where
   date :: Lens' a Day
-  date = dateFlex.from gregorianUnflex
+  date = _dateFlex.from gregorianUnflex
   {-# INLINE date #-}
 
-  dateFlex :: Lens' a FlexDate
-  dateFlex = date.gregorianUnflex
-  {-# INLINE dateFlex #-}
+  _dateFlex :: Lens' a FlexDate
+  _dateFlex = date.gregorianUnflex
+  {-# INLINE _dateFlex #-}
 
 instance Dateable UTCTime where
   date f (UTCTime d t) = flip UTCTime t <$> f d
@@ -239,12 +293,12 @@ instance Dateable Day where
   {-# INLINE date #-}
 
 instance Dateable FlexDate where
-  dateFlex = id
-  {-# INLINE dateFlex #-}
+  _dateFlex = id
+  {-# INLINE _dateFlex #-}
 
-instance Dateable FlexTime where
-  dateFlex f (FlexTime d t) = flip FlexTime t <$> f d
-  {-# INLINE dateFlex #-}
+instance Dateable FlexDateTime where
+  _dateFlex f (FlexDateTime d t) = flip FlexDateTime t <$> f d
+  {-# INLINE _dateFlex #-}
 
 -- | View 'Day' as an 'Integer' day number in the Julian calendar.
 --
@@ -268,7 +322,7 @@ gregorianDate = iso toGregorian (\(y,m,d) -> fromGregorian y m d)
 -- also change. This happens when the original date was a February
 -- 29th and we change to a non-leap year.
 year :: Dateable d => Lens' d Integer
-year = dateFlex._1
+year = _dateFlex._1
 {-# INLINE year #-}
 
 -- | Lens into the month value of a 'Dateable'.
@@ -279,7 +333,7 @@ year = dateFlex._1
 -- the day value might also be modified (clipped to a valid day in
 -- that month).
 month :: Dateable d => Lens' d Int
-month = dateFlex._2
+month = _dateFlex._2
 {-# INLINE month #-}
 
 -- | Lens into the day value of a 'Dateable'.
@@ -289,7 +343,7 @@ month = dateFlex._2
 -- day value will be clipped to a valid day value in the given
 -- year-month.
 day :: Dateable d => Lens' d Int
-day = dateFlex._3
+day = _dateFlex._3
 {-# INLINE day #-}
 
 --------------------------------------------------------------------------------
@@ -324,9 +378,12 @@ instance Timeable TimeOfDay where
   time = id
   {-# INLINE time #-}
 
-instance Timeable FlexTime where
-  time f (FlexTime d t) = FlexTime d <$> f t
+instance Timeable FlexDateTime where
+  time f (FlexDateTime d t) = FlexDateTime d <$> f t
   {-# INLINE time #-}
+
+instance Timeable FlexTime where
+  time f (FlexTime t) = FlexTime <$> f t
 
 -- | Lens into the hour value of a 'Timeable'.
 --
