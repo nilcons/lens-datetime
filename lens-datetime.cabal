@@ -37,25 +37,25 @@ description:
   .
   You can then do the following:
   .
-  >> aLocal ^. year
+  >> aLocal ^. years
   >2013
-  >> aUTC ^. month
+  >> aUTC ^. months
   >8
   >> aLocal & time .~ midnight
   >2013-08-22 00:00:00
-  >> aUTC & day .~ 1 & month .~ 1
+  >> aUTC & days .~ 1 & months .~ 1
   >2013-01-01 02:04:18.9 UTC
   .
   You can manipulate the date-time values with proper roll-over
   behavior via the @FlexibleDateTime@ mechanism:
   .
-  >> aLocal & flexDT.month +~ 12
+  >> aLocal & flexDT.months +~ 12
   >2014-08-22 13:45:28
-  >> aUTC & flexDT.day +~ 100
+  >> aUTC & flexDT.days +~ 100
   >2013-11-30 02:04:18.9 UTC
-  >> aLocal & flexDT.minute +~ 120
+  >> aLocal & flexDT.minutes +~ 120
   >2013-08-22 15:45:28
-  >> aLocal & flexDT %~ ((day +~ 7) . (hour +~ 2))
+  >> aLocal & flexDT %~ ((days +~ 7) . (hours +~ 2))
   >2013-08-22 13:45:28
 
 extra-source-files:

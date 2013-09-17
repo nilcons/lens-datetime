@@ -8,8 +8,8 @@ Portability : non-portable
 
 /Usage:/
 
-Basic interface consists of the following six lenses: 'year',
-'month', 'day', 'hour', 'minute' and 'second' with which you can
+Basic interface consists of the following six lenses: 'years',
+'months', 'days', 'hours', 'minutes' and 'seconds' with which you can
 access the corresponding \"fields\" of 'LocalTime' and 'UTCTime' in
 a unified way. Also, use 'date' and 'time' if you want to access the
 'Day' and 'TimeOfDay' parts as a whole.
@@ -32,17 +32,17 @@ Let's assume the following definitions:
 
 Then you can use the above lenses as follows:
 
->>> aLocal ^. year
+>>> aLocal ^. years
 2013
->>> aUTC ^. month
+>>> aUTC ^. months
 8
->>> aDay ^. day
+>>> aDay ^. days
 22
 >>> aLocal & time .~ midnight
 2013-08-22 00:00:00
->>> aUTC & day .~ 1 & month .~ 1
+>>> aUTC & days .~ 1 & months .~ 1
 2013-01-01 02:04:18.9 UTC
->>> aLocal & hour +~ 1            -- But see the note below!
+>>> aLocal & hours +~ 1            -- But see the note below!
 2013-08-22 14:45:28
 
 
@@ -50,21 +50,21 @@ Then you can use the above lenses as follows:
 
 For 'LocalTime' and 'UTCTime' these lenses provide the most
 straightforward implementation: via 'toGregorian'/'fromGregorian'
-in the case of 'year', 'month' and 'day'; and directly to the
-fields of 'TimeOfDay' in the case of 'hour', 'minute' and 'second'.
+in the case of 'years', 'months' and 'days'; and directly to the
+fields of 'TimeOfDay' in the case of 'hours', 'minutes' and 'seconds'.
 
 Which means, on one hand, that the date \"parts\" will be clipped
 to valid values:
 
->>> aLocal & month +~ 12
+>>> aLocal & months +~ 12
 2013-12-22 13:45:28        -- instead of: 2014-08-22 13:45:28
->>> aUTC & day +~ 100
+>>> aUTC & days +~ 100
 2013-08-31 02:04:18.9 UTC  -- instead of: 2013-11-30 02:04:18.9 UTC
 
 And on the other hand, that the time \"parts\" will not roll over
 and produce invalid values:
 
->>> aLocal & minute +~ 120
+>>> aLocal & minutes +~ 120
 2013-08-22 13:165:28       -- instead of: 2013-08-22 15:45:28
 
 Also, this means that the date lenses are not proper lenses: they
@@ -76,17 +76,17 @@ via these lenses if you cannot be sure that the result is a valid
 value. Instead use the 'FlexibleDateTime' mechanism and the
 'flexDT' isomorphism, which correctly rolls over:
 
->>> aLocal & flexDT.month +~ 12
+>>> aLocal & flexDT.months +~ 12
 2014-08-22 13:45:28
->>> aUTC & flexDT.day +~ 100
+>>> aUTC & flexDT.days +~ 100
 2013-11-30 02:04:18.9 UTC
->>> aLocal & flexDT.minute +~ 120
+>>> aLocal & flexDT.minutes +~ 120
 2013-08-22 15:45:28
 
 If you need to set multiple fields try to make only one round-trip
 via flexDT:
 
->>> aLocal & flexDT %~ ((day +~ 7) . (hour +~ 2))
+>>> aLocal & flexDT %~ ((days +~ 7) . (hours +~ 2))
 2013-08-22 13:45:28
 
 Note that even with 'flexDT' we completely ignore all the issues
@@ -108,9 +108,9 @@ complete example of working with daylight saving time:
 >        print (tz, t ^. utcInTZ tz)
 >
 >  printInLocal baseT
->  printInLocal $ baseT & flexDT %~ ((day +~ 1) . (hour +~ 0) . (minute +~ 5))
->  printInLocal $ baseT & flexDT %~ ((day +~ 1) . (hour +~ 1) . (minute +~ 5))
->  printInLocal $ baseT & flexDT %~ ((day +~ 1) . (hour +~ 2) . (minute +~ 5))
+>  printInLocal $ baseT & flexDT %~ ((days +~ 1) . (hours +~ 0) . (minutes +~ 5))
+>  printInLocal $ baseT & flexDT %~ ((days +~ 1) . (hours +~ 1) . (minutes +~ 5))
+>  printInLocal $ baseT & flexDT %~ ((days +~ 1) . (hours +~ 2) . (minutes +~ 5))
 
 >>> dstExample
 (CEST,2013-10-26 02:00:00)
@@ -126,10 +126,10 @@ complete example of working with daylight saving time:
 module Data.Time.Lens (
   -- * Lenses for the date parts
     Dateable(..)
-  , year, month, day
+  , years, months, days
   -- * Lenses for the time parts
   , Timeable(..)
-  , hour, minute, second
+  , hours, minutes, seconds
   -- * Support for the correct roll-over of fields
   , FlexDateTime(..)
   , FlexDate(..)
@@ -247,7 +247,7 @@ instance FlexibleDate Day where
 -- >>> let t = TimeOfDay 1 12 3
 -- >>> t
 -- 01:12:03
--- >>> t & flexT.second +~ (-7200)
+-- >>> t & flexT.seconds +~ (-7200)
 -- 23:12:03
 --
 class FlexibleTime a where
@@ -336,9 +336,9 @@ julianDT = iso there back
 -- year value in a date is modified the month and day values might
 -- also change. This happens when the original date was a February
 -- 29th and we change to a non-leap year.
-year :: Dateable d => Lens' d Integer
-year = _dateFlex._1
-{-# INLINE year #-}
+years :: Dateable d => Lens' d Integer
+years = _dateFlex._1
+{-# INLINE years #-}
 
 -- | Lens into the month value of a 'Dateable'.
 --
@@ -347,9 +347,9 @@ year = _dateFlex._1
 -- month value will be clipped to a valid month value. Also note that
 -- the day value might also be modified (clipped to a valid day in
 -- that month).
-month :: Dateable d => Lens' d Int
-month = _dateFlex._2
-{-# INLINE month #-}
+months :: Dateable d => Lens' d Int
+months = _dateFlex._2
+{-# INLINE months #-}
 
 -- | Lens into the day value of a 'Dateable'.
 --
@@ -357,9 +357,9 @@ month = _dateFlex._2
 -- it only obeys the lens laws if used with valid values. The updated
 -- day value will be clipped to a valid day value in the given
 -- year-month.
-day :: Dateable d => Lens' d Int
-day = _dateFlex._3
-{-# INLINE day #-}
+days :: Dateable d => Lens' d Int
+days = _dateFlex._3
+{-# INLINE days #-}
 
 --------------------------------------------------------------------------------
 -- Time of day parts
@@ -404,31 +404,31 @@ instance Timeable FlexTime where
 --
 -- Warning: this is not a proper lens for 'UTCTime': it only obeys the
 -- lens laws if used with valid values.
-hour :: Timeable t => Lens' t Int
-hour = time.hour'
+hours :: Timeable t => Lens' t Int
+hours = time.hours'
   where
-    hour' f (TimeOfDay h m s) = (\h' -> TimeOfDay h' m s) <$> f h
-{-# INLINE hour #-}
+    hours' f (TimeOfDay h m s) = (\h' -> TimeOfDay h' m s) <$> f h
+{-# INLINE hours #-}
 
 -- | Lens into the minute value of a 'Timeable'.
 --
 -- Warning: this is not a proper lens for 'UTCTime': it only obeys the
 -- lens laws if used with valid values.
-minute :: Timeable t => Lens' t Int
-minute = time.minute'
+minutes :: Timeable t => Lens' t Int
+minutes = time.minutes'
   where
-    minute' f (TimeOfDay h m s) = (\m' -> TimeOfDay h m' s) <$> f m
-{-# INLINE minute #-}
+    minutes' f (TimeOfDay h m s) = (\m' -> TimeOfDay h m' s) <$> f m
+{-# INLINE minutes #-}
 
 -- | Lens into the second value of a 'Timeable'.
 --
 -- Warning: this is not a proper lens for 'UTCTime': it only obeys the
 -- lens laws if used with valid values.
-second :: Timeable t => Lens' t Pico
-second = time.second'
+seconds :: Timeable t => Lens' t Pico
+seconds = time.seconds'
   where
-    second' f (TimeOfDay h m s) = TimeOfDay h m <$> f s
-{-# INLINE second #-}
+    seconds' f (TimeOfDay h m s) = TimeOfDay h m <$> f s
+{-# INLINE seconds #-}
 
 --------------------------------------------------------------------------------
 -- Misc
