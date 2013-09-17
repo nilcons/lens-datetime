@@ -141,6 +141,7 @@ module Data.Time.Lens (
   , utcInTZ
   , utcAsLocal
   , julianDay
+  , julianDT
   , gregorianDate
   ) where
 
@@ -313,6 +314,20 @@ julianDay = iso toModifiedJulianDay ModifiedJulianDay
 gregorianDate :: Iso' Day (Integer,Int,Int)
 gregorianDate = iso toGregorian (\(y,m,d) -> fromGregorian y m d)
 {-# INLINE gregorianDate #-}
+
+-- | View 'LocalTime' as a fractional day in the modified Julian calendar.
+--
+-- See the description of 'ModifiedJulianDay' and 'timeOfDayToDayFraction'.
+julianDT :: Iso' LocalTime Rational
+julianDT = iso there back
+  where
+    {-# INLINE there #-}
+    there (LocalTime d tod) =
+      fromIntegral (toModifiedJulianDay d) + timeOfDayToDayFraction tod
+    {-# INLINE back #-}
+    back r = let (d,t) = properFraction r in
+      LocalTime (ModifiedJulianDay d) (dayFractionToTimeOfDay t)
+{-# INLINE julianDT #-}
 
 -- | Lens into the year value of a 'Dateable'.
 --
