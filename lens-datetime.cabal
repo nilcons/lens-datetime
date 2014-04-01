@@ -2,14 +2,14 @@ name: lens-datetime
 version: 0.2
 license: BSD3
 license-file: LICENSE
-author: Mihaly Barasz <mihaly@barasz.com>
-maintainer: Mihaly Barasz <mihaly@barasz.com>
+author: Mihaly Barasz <klao@nilcons.com>
+maintainer: Mihaly Barasz <klao@nilcons.com>
 build-type: Simple
 cabal-version: >= 1.6
 category: Data, Lenses
 stability: experimental
-homepage: http://github.com/klao/lens-datetime
-bug-reports: http://github.com/klao/lens-datetime/issues
+homepage: http://github.com/nilcons/lens-datetime
+bug-reports: http://github.com/nilcons/lens-datetime/issues
 synopsis: Lenses for Data.Time.* types
 
 description:
@@ -64,7 +64,7 @@ extra-source-files:
 
 source-repository head
   type: git
-  location: https://github.com/klao/lens-datetime.git
+  location: https://github.com/nilcons/lens-datetime.git
 
 library
   ghc-options: -Wall
