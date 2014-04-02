@@ -8,8 +8,8 @@ build-type: Simple
 cabal-version: >= 1.6
 category: Data, Lenses
 stability: experimental
-homepage: http://github.com/nilcons/lens-datetime
-bug-reports: http://github.com/nilcons/lens-datetime/issues
+homepage: https://github.com/nilcons/lens-datetime
+bug-reports: https://github.com/nilcons/lens-datetime/issues
 synopsis: Lenses for Data.Time.* types
 
 description:
