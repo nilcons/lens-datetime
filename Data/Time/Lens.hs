@@ -140,6 +140,7 @@ module Data.Time.Lens (
   -- * Miscellaneous
   , utcInTZ
   , utcAsLocal
+  , zonedAsLocal
   , julianDay
   , julianDT
   , gregorianDate
@@ -220,6 +221,10 @@ instance FlexibleDateTime UTCTime where
   flexDT = utcAsLocal.flexDT
   {-# INLINE flexDT #-}
 
+instance FlexibleDateTime ZonedTime where
+  flexDT = zonedAsLocal . flexDT
+  {-# INLINE flexDT #-}
+
 -- | Type class to provide correct roll-over behavior for date lenses.
 --
 -- Used exactly as 'flexDT', but for values that have only \"date\"
@@ -290,6 +295,10 @@ instance Dateable UTCTime where
 
 instance Dateable LocalTime where
   date f (LocalTime d t) = flip LocalTime t <$> f d
+  {-# INLINE date #-}
+
+instance Dateable ZonedTime where
+  date = zonedAsLocal . date
   {-# INLINE date #-}
 
 instance Dateable Day where
@@ -392,6 +401,10 @@ instance Timeable LocalTime where
   time f (LocalTime d t) = LocalTime d <$> f t
   {-# INLINE time #-}
 
+instance Timeable ZonedTime where
+  time = zonedAsLocal . time
+  {-# INLINE time #-}
+
 instance Timeable TimeOfDay where
   time = id
   {-# INLINE time #-}
@@ -449,3 +462,8 @@ utcAsLocal = utcInTZ utc
 utcInTZ :: TimeZone -> Iso' UTCTime LocalTime
 utcInTZ tz = iso (utcToLocalTime tz) (localTimeToUTC tz)
 {-# INLINE utcInTZ #-}
+
+-- | Lens into the 'LocalTime' part of 'ZonedTime'.
+zonedAsLocal :: Lens' ZonedTime LocalTime
+zonedAsLocal f (ZonedTime lt tz) = flip ZonedTime tz <$> f lt
+{-# INLINE zonedAsLocal #-}
