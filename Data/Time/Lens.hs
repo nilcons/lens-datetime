@@ -152,6 +152,9 @@ import Data.Time.Calendar
 import Data.Time.Clock
 import Data.Time.LocalTime
 
+-- To avoid the 'redundant import' warning for Applicative:
+import Prelude
+
 --------------------------------------------------------------------------------
 -- 'Flexible' data types to properly implement rolling-over behavior.
 
